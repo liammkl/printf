@@ -1,17 +1,17 @@
-#include "main.h"
 #include <stdarg.h>
 #include <unistd.h>
 
 /**
- * _printf - Produces output according to a format.
- * @format: The format string.
+ * _printf - Custom printf function
+ * @format: The format string
+ * @...: Additional arguments based on format
  *
- * Return: The number of characters printed (excluding the null byte).
+ * Return: Number of characters printed (excluding null byte)
  */
 int _printf(const char *format, ...)
 {
 	va_list args;
-	int printed_chars = 0;
+	int char_count = 0;
 	
 	va_start(args, format);
 	while (*format)
@@ -19,40 +19,39 @@ int _printf(const char *format, ...)
 		if (*format == '%')
 		{
 			format++;
-			if (*format == '\0')
-				break;
-			if (*format == 'c')
+			switch (*format)
 			{
-				int c = va_arg(args, int);
-				printed_chars += write(1, &c, 1);
-			}
-			else if (*format == 's')
-			{
-				char *str = va_arg(args, char *);
-				if (str == NULL)
-					str = "(null)";
-				while (*str)
-				{
-					printed_chars += write(1, str, 1);
-					str++;
-				}
-			}
-			else if (*format == '%')
-			{
-				printed_chars += write(1, "%", 1);
-			}
-			else
-			{
-				printed_chars += write(1, "%", 1);
-				printed_chars += write(1, format, 1);
+				case 'c':
+					char_count += write(1, &va_arg(args, int), 1);
+					break;
+				case 's':
+					{
+						char *str = va_arg(args, char *);
+						int len = 0;
+						if (str == NULL)
+							str = "(null)";
+						while (str[len])
+							len++;
+						char_count += write(1, str, len);
+					}
+					break;
+				case '%':
+					char_count += write(1, "%", 1);
+					break;
+				default:
+					write(1, "%", 1);
+					write(1, format, 1);
+					char_count += 2;
+					break;
 			}
 		}
 		else
 		{
-			printed_chars += write(1, format, 1);
+			write(1, format, 1);
+			char_count++;
 		}
 		format++;
 	}
 	va_end(args);
-	return (printed_chars);
+	return char_count;
 }
