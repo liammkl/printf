@@ -1,5 +1,8 @@
 #include "main.h"
-#include <stdio.h>
+#include <stdarg.h>
+#include <unistd.h>
+
+int _print_number(int n);
 
 /**
  * _printf - Produces output according to a format.
@@ -11,10 +14,7 @@ int _printf(const char *format, ...)
 {
 	va_list args;
 	int printed_chars = 0;
-	char *str;
-	
 	va_start(args, format);
-	
 	while (*format)
 	{
 		if (*format == '%')
@@ -30,7 +30,7 @@ int _printf(const char *format, ...)
 			}
 			else if (*format == 's')
 			{
-				str = va_arg(args, char *);
+				char *str = va_arg(args, char *);
 				if (str == NULL)
 					str = "(null)";
 				while (*str)
@@ -39,15 +39,10 @@ int _printf(const char *format, ...)
 					str++;
 				}
 			}
-			
 			else if (*format == 'd' || *format == 'i')
 			{
 				int num = va_arg(args, int);
 				printed_chars += _print_number(num);
-			}
-			else if (*format == '%')
-			{
-				printed_chars += write(1, "%", 1);
 			}
 			else
 			{
@@ -74,6 +69,8 @@ int _printf(const char *format, ...)
 int _print_number(int n)
 {
 	int printed_chars = 0;
+	
+	char digit;
 	if (n < 0)
 	{
 		printed_chars += write(1, "-", 1);
@@ -81,7 +78,9 @@ int _print_number(int n)
 	}
 	if (n / 10)
 		printed_chars += _print_number(n / 10);
-	char digit = (n % 10) + '0';
+	
+	digit = (n % 10) + '0';
 	printed_chars += write(1, &digit, 1);
+	
 	return (printed_chars);
 }
