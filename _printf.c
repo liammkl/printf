@@ -27,18 +27,18 @@ int _printf(const char *format, ...)
 		else
 		{
 			format++;
-			if (*format == '/0')
+			if (*format == '\0')
 				return (-1);
 			if (*format == 'c')
 			{
-				char c = va_args(args, int);
+				char c = va_arg(args, int);
 
 				write(1, &c, 1);
 				count++;
 			}
 			else if (*format == 's')
 			{
-				char *s = va_args(args, char *);
+				char *s = va_arg(args, char *);
 				if (s == NULL)
 					s = "(null)";
 				while (*s)
