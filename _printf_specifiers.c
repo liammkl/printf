@@ -19,8 +19,8 @@ int _printf(const char *format, ...)
 	{
 		if (*format == '%')
 		{
-			format++; /* Move past '%' */
-			if (*format == '\0') /* If '%' is at the end, break */
+			format++;
+			if (*format == '\0')
 				break;
 			
 			if (*format == 'c')
