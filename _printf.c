@@ -1,66 +1,265 @@
 #include "main.h"
-
-void print_buffer(char buffer[], int *buff_ind);
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <ctype.h>
 
 /**
- * _printf - Printf function
- * @format: format.
- * Return: Printed chars.
+ * _printf - Produces output according to a format.
+ * @format: The format string.
+ * @...: The arguments.
+ *
+ * Return: The number of characters printed.
  */
 int _printf(const char *format, ...)
 {
-	int i, printed = 0, printed_chars = 0;
-	int flags, width, precision, size, buff_ind = 0;
-	va_list list;
-	char buffer[BUFF_SIZE];
+    va_list args;
+    int count = 0;
+    int i = 0;
 
-	if (format == NULL)
-		return (-1);
+    va_start(args, format);
 
-	va_start(list, format);
+    while (format && format[i])
+    {
+        if (format[i] == '%')
+        {
+            if (format[i + 1] == '\0')
+                return (-1);
+            else if (format[i + 1] == '%')
+            {
+                write(1, &format[i], 1);
+                count++;
+                i++;
+            }
+            else if (format[i + 1] == 'c')
+            {
+                char c = va_arg(args, int);
+                write(1, &c, 1);
+                count++;
+                i++;
+            }
+            else if (format[i + 1] == 's')
+            {
+                char *str = va_arg(args, char *);
+                int j = 0;
 
-	for (i = 0; format && format[i] != '\0'; i++)
-	{
-		if (format[i] != '%')
-		{
-			buffer[buff_ind++] = format[i];
-			if (buff_ind == BUFF_SIZE)
-				print_buffer(buffer, &buff_ind);
-			/* write(1, &format[i], 1);*/
-			printed_chars++;
-		}
-		else
-		{
-			print_buffer(buffer, &buff_ind);
-			flags = get_flags(format, &i);
-			width = get_width(format, &i, list);
-			precision = get_precision(format, &i, list);
-			size = get_size(format, &i);
-			++i;
-			printed = handle_print(format, &i, list, buffer,
-				flags, width, precision, size);
-			if (printed == -1)
-				return (-1);
-			printed_chars += printed;
-		}
-	}
+                if (!str)
+                    str = "(null)";
 
-	print_buffer(buffer, &buff_ind);
+                while (str[j])
+                {
+                    write(1, &str[j], 1);
+                    count++;
+                    j++;
+                }
+                i++;
+            }
+            else if (format[i + 1] == 'd' || format[i + 1] == 'i')
+            {
+                int num = va_arg(args, int);
+                char buffer[12]; // Assuming a maximum integer of 32 bits
+                int j = 0;
 
-	va_end(list);
+                if (num < 0)
+                {
+                    write(1, "-", 1);
+                    count++;
+                    num = -num;
+                }
 
-	return (printed_chars);
-}
+                do
+                {
+                    buffer[j] = num % 10 + '0';
+                    num /= 10;
+                    j++;
+                } while (num > 0);
 
-/**
- * print_buffer - Prints the contents of the buffer if it exist
- * @buffer: Array of chars
- * @buff_ind: Index at which to add next char, represents the length.
- */
-void print_buffer(char buffer[], int *buff_ind)
-{
-	if (*buff_ind > 0)
-		write(1, &buffer[0], *buff_ind);
+                while (j--)
+                {
+                    write(1, &buffer[j], 1);
+                    count++;
+                }
 
-	*buff_ind = 0;
+                i++;
+            }
+            else if (format[i + 1] == 'u')
+            {
+                unsigned int num = va_arg(args, unsigned int);
+                char buffer[12]; // Assuming a maximum unsigned integer of 32 bits
+                int j = 0;
+
+                do
+                {
+                    buffer[j] = num % 10 + '0';
+                    num /= 10;
+                    j++;
+                } while (num > 0);
+
+                while (j--)
+                {
+                    write(1, &buffer[j], 1);
+                    count++;
+                }
+
+                i++;
+            }
+            else if (format[i + 1] == 'o')
+            {
+                unsigned int num = va_arg(args, unsigned int);
+                char buffer[12]; // Assuming a maximum unsigned integer of 32 bits
+                int j = 0;
+
+                do
+                {
+                    buffer[j] = (num % 8) + '0';
+                    num /= 8;
+                    j++;
+                } while (num > 0);
+
+                while (j--)
+                {
+                    write(1, &buffer[j], 1);
+                    count++;
+                }
+
+                i++;
+            }
+            else if (format[i + 1] == 'x' || format[i + 1] == 'X')
+            {
+                unsigned int num = va_arg(args, unsigned int);
+                char buffer[12]; // Assuming a maximum unsigned integer of 32 bits
+                int j = 0;
+                char hex_digits[] = "0123456789abcdef";
+
+                do
+                {
+                    buffer[j] = hex_digits[num % 16];
+                    num /= 16;
+                    j++;
+                } while (num > 0);
+
+                if (format[i + 1] == 'X')
+                {
+                    for (int k = 0; k < j; k++)
+                        buffer[k] = toupper(buffer[k]);
+                }
+
+                while (j--)
+                {
+                    write(1, &buffer[j], 1);
+                    count++;
+                }
+
+                i++;
+            }
+            else if (format[i + 1] == 'S')
+            {
+                char *str = va_arg(args, char *);
+                int j = 0;
+
+                if (!str)
+                    str = "(null)";
+
+                while (str[j])
+                {
+                    if (str[j] >= 32 && str[j] < 127)
+                    {
+                        write(1, &str[j], 1);
+                        count++;
+                    }
+                    else
+                    {
+                        char hex_digit1 = (str[j] >> 4) & 0xF;
+                        char hex_digit2 = str[j] & 0xF;
+                        write(1, "\\x", 2);
+                        write(1, &hex_digits[hex_digit1], 1);
+                        write(1, &hex_digits[hex_digit2], 1);
+                        count += 4;
+                    }
+                    j++;
+                }
+
+                i++;
+            }
+            else if (format[i + 1] == 'p')
+            {
+                void *ptr = va_arg(args, void *);
+                unsigned long int num = (unsigned long int)ptr;
+                char buffer[16]; // Assuming a maximum pointer size of 64 bits
+                int j = 0;
+                char hex_digits[] = "0123456789abcdef";
+
+                write(1, "0x", 2);
+                count += 2;
+
+                do
+                {
+                    buffer[j] = hex_digits[num % 16];
+                    num /= 16;
+                    j++;
+                } while (num > 0);
+
+                for (int k = j - 1; k >= 0; k--)
+                {
+                    write(1, &buffer[k], 1);
+                    count++;
+                }
+
+                i++;
+            }
+            else if (format[i + 1] == 'r')
+            {
+                char *str = va_arg(args, char *);
+                int len = 0;
+
+                if (!str)
+                    str = "(null)";
+
+                while (str[len])
+                    len++;
+
+                for (int j = len - 1; j >= 0; j--)
+                {
+                    write(1, &str[j], 1);
+                    count++;
+                }
+
+                i++;
+            }
+            else if (format[i + 1] == 'R')
+            {
+                char *str = va_arg(args, char *);
+                int j = 0;
+
+                if (!str)
+                    str = "(null)";
+
+                while (str[j])
+                {
+                    char c = str[j];
+                    if ((c >= 'a' && c <= 'm') || (c >= 'A' && c <= 'M'))
+                        c += 13;
+                    else if ((c >= 'n' && c <= 'z') || (c >= 'N' && c <= 'Z'))
+                        c -= 13;
+
+                    write(1, &c, 1);
+                    count++;
+                    j++;
+                }
+
+                i++;
+            }
+            // Add support for other features like flag characters, field width, precision, and length modifiers here
+            // ...
+        }
+        else
+        {
+            write(1, &format[i], 1);
+            count++;
+        }
+        i++;
+    }
+
+    va_end(args);
+    return (count);
 }
